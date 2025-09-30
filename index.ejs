@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Drive Filterer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+    .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 16px; }
+    input[type=text], textarea { width: 100%; padding: 8px; margin-top: 6px; box-sizing: border-box; }
+    button { padding: 10px 16px; border-radius: 6px; cursor: pointer; }
+    .links { margin-top: 12px; }
+    pre { background:#f7f7f7; padding:10px; border-radius:6px; overflow:auto; }
+  </style>
+</head>
+<body>
+  <h2>Drive Filterer — Lọc & copy file theo mã</h2>
+  <div class="card">
+    <% if (!loggedIn) { %>
+      <p>Bạn chưa đăng nhập. Bấm nút để đăng nhập Google và cấp quyền Drive.</p>
+      <a href="/auth"><button>Đăng nhập với Google</button></a>
+    <% } else { %>
+      <p>Đã đăng nhập. Nếu muốn đổi tài khoản bấm <a href="/logout">Logout</a>.</p>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h3>Tạo job lọc</h3>
+    <form id="filterForm">
+      <label>Link folder Google Drive (folder gốc)</label>
+      <input type="text" id="folderLink" placeholder="https://drive.google.com/drive/folders/..." required />
+
+      <label style="margin-top:8px;">Danh sách mã ảnh (mỗi mã 1 dòng hoặc ngăn cách dấu phẩy)</label>
+      <textarea id="codesText" rows="6" placeholder="38UT.CR2&#10;YO3715.CR3&#10;ULG36.CR2"></textarea>
+      <p style="font-size:0.9em;color:#666">Lưu ý: bây giờ app sẽ so khớp <strong>tên chính</strong> không cần quan tâm đuôi file. Ví dụ nhập <code>38UT</code> hoặc <code>38UT.CR2</code> đều OK.</p>
+
+      <div style="margin-top:12px;">
+        <button type="submit">Bắt đầu lọc & copy</button>
+      </div>
+    </form>
+
+    <div id="result" class="links"></div>
+  </div>
+
+  <script>
+    document.getElementById('filterForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const folderLink = document.getElementById('folderLink').value.trim();
+      const codesText = document.getElementById('codesText').value.trim();
+      if (!folderLink || !codesText) { alert('Nhập đầy đủ.'); return; }
+
+      const resDiv = document.getElementById('result');
+      resDiv.innerHTML = '<p>Đang xử lý... (chờ vài giây tới vài chục giây tuỳ số file)</p>';
+
+      try {
+        const resp = await fetch('/api/filter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ folderLink, codesText })
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          resDiv.innerHTML = '<pre>Error: ' + (data.error || JSON.stringify(data)) + '</pre>';
+          return;
+        }
+        if ((data.links || []).length === 0) {
+          resDiv.innerHTML = '<p>Không tìm thấy file trùng mã nào.</p>';
+          return;
+        }
+        let html = `<p>Đã tạo folder: <strong>${data.createdFolderName}</strong></p>`;
+        html += '<ul>';
+        for (const l of data.links) {
+          const view = l.webViewLink ? `<a href="${l.webViewLink}" target="_blank">Open</a>` : '';
+          const content = l.webContentLink ? `<a href="${l.webContentLink}" target="_blank">Download</a>` : '';
+          html += `<li>${l.originalName} — ${view} ${content}</li>`;
+        }
+        html += '</ul>';
+        resDiv.innerHTML = html;
+      } catch (err) {
+        resDiv.innerHTML = '<pre>Request failed: ' + err + '</pre>';
+      }
+    });
+  </script>
+</body>
+</html>
