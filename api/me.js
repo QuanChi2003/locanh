@@ -17,5 +17,5 @@ module.exports = (req, res) => {
     .split(';').map(s=>s.trim()).find(s=>s.startsWith('sess='))?.slice(5);
   const tokens = verify(cookie);
   res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify({ authed: !!tokens }));
+  res.end(JSON.stringify({ authed: !!tokens, user: tokens?.user || null }));
 };
