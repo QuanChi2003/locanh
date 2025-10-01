@@ -1,8 +1,10 @@
 {
+  "version": 2,
+  "framework": null,
+  "regions": ["sin1"],
   "functions": {
-    "api/drive.js": {
+    "api/**/*.js": {
       "runtime": "nodejs18.x"
     }
-  },
-  "regions": ["sin1"]
+  }
 }
