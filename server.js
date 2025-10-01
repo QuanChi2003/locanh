@@ -10,7 +10,7 @@ app.use(express.static(".")); // phục vụ index.html
 // OAuth2 config
 const CLIENT_ID = "598650572631-celek24b63ekm82860gr4r53dq5sqsrh.apps.googleusercontent.com";
 const CLIENT_SECRET = "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";
-const REDIRECT_URI = "http://localhost:3000/oauth2callback";
+const REDIRECT_URI = "https://locanh.vercel.app/";
 
 const oAuth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
