@@ -1,7 +1,7 @@
 {
   "name": "locanh",
   "private": true,
-  "engines": { "node": "18" },
+  "engines": { "node": "22" },
   "dependencies": {
     "googleapis": "^132.0.0"
   }
