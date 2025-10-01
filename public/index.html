@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Lọc Ảnh Google Drive</title>
+  <style>
+    body { font-family: sans-serif; margin: 24px; max-width: 800px }
+    h1 { font-size: 22px }
+    .card { border: 1px solid #ccc; padding: 16px; border-radius: 12px; margin: 16px 0 }
+    input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 6px }
+    button { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; margin-top: 12px }
+    .primary { background: #007bff; color: #fff }
+    .secondary { background: #eee }
+    .ok { color: green } .err { color: red }
+  </style>
+</head>
+<body>
+  <h1>🔍 Lọc Ảnh Google Drive</h1>
+
+  <div class="card">
+    <span id="authState">Đang kiểm tra đăng nhập…</span>
+    <a id="loginBtn" href="/api/auth" style="display:none"><button class="primary">Đăng nhập Google</button></a>
+    <button id="logoutBtn" class="secondary" style="display:none">Đăng xuất</button>
+  </div>
+
+  <div class="card">
+    <label>Link thư mục gốc:</label>
+    <input type="text" id="sourceLink" placeholder="https://drive.google.com/drive/folders/xxxxx">
+    <label>Danh sách file (mỗi dòng / cách bởi dấu phẩy):</label>
+    <textarea id="list" rows="6"></textarea>
+    <button id="runBtn" class="primary">Chạy lọc</button>
+    <div id="status"></div>
+  </div>
+
+  <div id="result" class="card" style="display:none">
+    <h3>Kết quả</h3>
+    <div><a id="resultLink" target="_blank">Mở thư mục mới</a></div>
+    <p>Đã copy:</p><ul id="matched"></ul>
+    <p>Không tìm thấy:</p><ul id="notFound"></ul>
+  </div>
+
+<script>
+async function refreshAuth() {
+  const r = await fetch('/api/me', { credentials: 'include' });
+  const j = await r.json();
+  if (j.authed) {
+    authState.textContent = "Đã đăng nhập ✅";
+    loginBtn.style.display = "none"; logoutBtn.style.display = "inline-block";
+  } else {
+    authState.textContent = "Chưa đăng nhập";
+    loginBtn.style.display = "inline-block"; logoutBtn.style.display = "none";
+  }
+}
+logoutBtn.onclick = async()=>{await fetch('/api/logout',{method:'POST'});location.reload()};
+runBtn.onclick = async()=>{
+  status.textContent="Đang chạy…"; result.style.display="none";
+  const r = await fetch('/api/filter',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+    body:JSON.stringify({sourceFolderLink:sourceLink.value,list:list.value})});
+  const j = await r.json();
+  if(!r.ok){status.innerHTML='<span class=err>'+j.error+'</span>';return}
+  status.innerHTML='<span class=ok>Hoàn tất!</span>'; result.style.display="block";
+  resultLink.href=j.resultLink;
+  matched.innerHTML=j.matched.map(n=>"<li>"+n+"</li>").join("");
+  notFound.innerHTML=j.notFound.map(n=>"<li>"+n+"</li>").join("");
+};
+refreshAuth();
+</script>
+</body>
+</html>
