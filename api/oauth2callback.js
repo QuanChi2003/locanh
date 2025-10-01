@@ -34,7 +34,7 @@ module.exports = async (req, res) => {
     res.writeHead(302, { Location: '/' });
     res.end();
   } catch (e) {
-    console.error('OAuth error:', e);
+    console.error('OAuth error:', e?.response?.data || e?.message || e);
     res.statusCode = 500;
     res.end('OAuth error');
   }
