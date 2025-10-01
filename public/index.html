@@ -24,6 +24,9 @@
   </div>
 
   <div class="card">
+    <label>Tên job</label>
+    <input id="jobName" placeholder="VD: Album A_2025-10-01">
+
     <label>Link thư mục gốc (Google Drive)</label>
     <input id="sourceLink" placeholder="https://drive.google.com/drive/folders/xxxxxx">
 
@@ -31,6 +34,7 @@
     <textarea id="list" rows="7" placeholder="38UT.CR2
 YO3715.CR3
 ULG36.CR2
+MG2088
 GG62.CR3"></textarea>
 
     <button id="runBtn" class="primary">Chạy lọc</button>
@@ -61,7 +65,11 @@ runBtn.onclick = async()=>{
   status.textContent = 'Đang chạy…'; result.style.display='none';
   const r = await fetch('/api/filter', {
     method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
-    body: JSON.stringify({ sourceFolderLink: sourceLink.value, list: list.value })
+    body: JSON.stringify({
+      jobName: jobName.value,
+      sourceFolderLink: sourceLink.value,
+      list: list.value
+    })
   });
   const j = await r.json();
   if (!r.ok) { status.innerHTML = '<span class=err>'+ (j.error||'Lỗi') +'</span>'; return; }
