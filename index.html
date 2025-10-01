@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Lọc Ảnh Google Drive</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: #f3f6fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 450px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    button {
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #3367d6;
+    }
+
+    .secondary {
+      background: #34a853;
+    }
+
+    .secondary:hover {
+      background: #2c8c47;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 15px;
+      color: #444;
+    }
+
+    a {
+      color: #4285f4;
+      font-weight: bold;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📂 Lọc Ảnh Google Drive</h1>
+
+    <button onclick="login()">🔑 Đăng nhập Google</button>
+
+    <input type="text" id="folder" placeholder="Dán link thư mục Google Drive">
+
+    <textarea id="codes" rows="5" placeholder="Nhập danh sách mã file, cách nhau bằng dấu phẩy"></textarea>
+
+    <button class="secondary" onclick="filter()">🚀 Bắt đầu lọc ảnh</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    function login() {
+      window.location.href = "/auth";
+    }
+
+    async function filter() {
+      const folderLink = document.getElementById("folder").value;
+      const folderId = folderLink.match(/[-\w]{25,}/)?.[0]; 
+      const codes = document.getElementById("codes").value.split(",").map(s => s.trim());
+
+      if (!folderId || codes.length === 0) {
+        document.getElementById("result").innerHTML = "<p style='color:red'>⚠️ Vui lòng nhập đầy đủ thông tin!</p>";
+        return;
+      }
+
+      document.getElementById("result").innerHTML = "⏳ Đang xử lý...";
+
+      const res = await fetch("/filter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folderId, fileCodes: codes })
+      });
+
+      const text = await res.text();
+      document.getElementById("result").innerHTML = `<p>✅ Ảnh đã lọc nằm tại: <a href="${text}" target="_blank">Mở folder</a></p>`;
+    }
+  </script>
+</body>
+</html>
