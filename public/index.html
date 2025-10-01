@@ -5,14 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Lọc Ảnh Google Drive</title>
   <style>
-    body { font-family: sans-serif; margin: 24px; max-width: 800px }
-    h1 { font-size: 22px }
-    .card { border: 1px solid #ccc; padding: 16px; border-radius: 12px; margin: 16px 0 }
-    input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 6px }
+    body { font-family: system-ui, Arial; margin: 24px; max-width: 820px }
+    .card { border: 1px solid #ddd; padding: 16px; border-radius: 12px; margin: 16px 0 }
+    input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; }
     button { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; margin-top: 12px }
-    .primary { background: #007bff; color: #fff }
+    .primary { background: #111; color: #fff }
     .secondary { background: #eee }
-    .ok { color: green } .err { color: red }
+    .ok { color: #0a7e07 } .err { color: #c00 }
   </style>
 </head>
 <body>
@@ -25,10 +24,15 @@
   </div>
 
   <div class="card">
-    <label>Link thư mục gốc:</label>
-    <input type="text" id="sourceLink" placeholder="https://drive.google.com/drive/folders/xxxxx">
-    <label>Danh sách file (mỗi dòng / cách bởi dấu phẩy):</label>
-    <textarea id="list" rows="6"></textarea>
+    <label>Link thư mục gốc (Google Drive)</label>
+    <input id="sourceLink" placeholder="https://drive.google.com/drive/folders/xxxxxx">
+
+    <label>Danh sách file (mỗi dòng / dấu phẩy)</label>
+    <textarea id="list" rows="7" placeholder="38UT.CR2
+YO3715.CR3
+ULG36.CR2
+GG62.CR3"></textarea>
+
     <button id="runBtn" class="primary">Chạy lọc</button>
     <div id="status"></div>
   </div>
@@ -41,28 +45,31 @@
   </div>
 
 <script>
-async function refreshAuth() {
+async function refreshAuth(){
   const r = await fetch('/api/me', { credentials: 'include' });
   const j = await r.json();
   if (j.authed) {
-    authState.textContent = "Đã đăng nhập ✅";
-    loginBtn.style.display = "none"; logoutBtn.style.display = "inline-block";
+    authState.textContent = 'Đã đăng nhập ✅';
+    loginBtn.style.display = 'none'; logoutBtn.style.display = 'inline-block';
   } else {
-    authState.textContent = "Chưa đăng nhập";
-    loginBtn.style.display = "inline-block"; logoutBtn.style.display = "none";
+    authState.textContent = 'Chưa đăng nhập';
+    loginBtn.style.display = 'inline-block'; logoutBtn.style.display = 'none';
   }
 }
-logoutBtn.onclick = async()=>{await fetch('/api/logout',{method:'POST'});location.reload()};
+logoutBtn.onclick = async()=>{ await fetch('/api/logout', { method:'POST' }); location.reload(); };
 runBtn.onclick = async()=>{
-  status.textContent="Đang chạy…"; result.style.display="none";
-  const r = await fetch('/api/filter',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-    body:JSON.stringify({sourceFolderLink:sourceLink.value,list:list.value})});
+  status.textContent = 'Đang chạy…'; result.style.display='none';
+  const r = await fetch('/api/filter', {
+    method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+    body: JSON.stringify({ sourceFolderLink: sourceLink.value, list: list.value })
+  });
   const j = await r.json();
-  if(!r.ok){status.innerHTML='<span class=err>'+j.error+'</span>';return}
-  status.innerHTML='<span class=ok>Hoàn tất!</span>'; result.style.display="block";
-  resultLink.href=j.resultLink;
-  matched.innerHTML=j.matched.map(n=>"<li>"+n+"</li>").join("");
-  notFound.innerHTML=j.notFound.map(n=>"<li>"+n+"</li>").join("");
+  if (!r.ok) { status.innerHTML = '<span class=err>'+ (j.error||'Lỗi') +'</span>'; return; }
+  status.innerHTML = '<span class=ok>Hoàn tất!</span>';
+  result.style.display='block';
+  resultLink.href = j.resultLink;
+  matched.innerHTML = (j.matched || []).map(n=>`<li>${n}</li>`).join('');
+  notFound.innerHTML = (j.notFound || []).map(n=>`<li>${n}</li>`).join('');
 };
 refreshAuth();
 </script>
