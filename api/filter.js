@@ -113,7 +113,33 @@ module.exports = async (req, res) => {
       pageToken = resp.data.nextPageToken || null;
     } while (pageToken);
 
-    const totalFiles = files.length;
+    
+    // --- File type filtering (by extension list like JPG, PNG, NEF, RAW, ... ) ---
+    function extOf(name){ const m = String(name||'').match(/\.([^.]+)$/); return m ? m[1].toUpperCase() : ''; }
+    const typeListRaw = String(body.types || '').trim();
+    let allowExt = null;
+    if (typeListRaw) {
+      allowExt = new Set(
+        typeListRaw.split(/[\s,;]+/).map(s=>s.trim().toUpperCase()).filter(Boolean)
+      );
+      if (allowExt.has('IMAGE') || allowExt.has('IMG') || allowExt.has('HINH') ) {
+        ['JPG','JPEG','PNG','GIF','WEBP','TIFF','TIF','BMP','HEIC','HEIF'].forEach(e=>allowExt.add(e));
+      }
+      if (allowExt.has('RAW')) {
+        ['CR2','CR3','NEF','ARW','RAF','RW2','ORF','PEF','DNG','SR2','SRW'].forEach(e=>allowExt.add(e));
+      }
+      files = files.filter(f => {
+        const e = extOf(f.name);
+        if (allowExt.has(e)) return true;
+        if (f.mimeType && (allowExt.has('IMAGE') || allowExt.has('IMG')) && f.mimeType.startsWith('image/')) return true;
+        if (f.mimeType==='image/jpeg' && allowExt.has('JPG')) return true;
+        if (f.mimeType==='image/png' && allowExt.has('PNG')) return true;
+        if (f.mimeType in {'image/tiff':1} and (allowExt.has('TIFF') or allowExt.has('TIF'))) return true;
+        return false;
+      });
+    }
+    
+const totalFiles = files.length;
     const byCanon = buildCanonicalMap(files);
     const wantedCanon = wantedRaw.map(canon);
 
