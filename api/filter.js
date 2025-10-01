@@ -31,7 +31,7 @@ function normalizeList(input) {
 /** Chuẩn hóa để so khớp “mềm”: bỏ đuôi, bỏ ký tự không chữ/số, không phân biệt hoa/thường */
 function canon(s) {
   if (!s) return '';
-  const base = s.replace(/\.[^.]+$/, '');               // bỏ phần mở rộng
+  const base = s.replace(/\.[^.]+$/, '');
   return base.normalize('NFKC').replace(/[^0-9a-zA-Z]+/g, '').toUpperCase();
 }
 
@@ -74,7 +74,7 @@ module.exports = async (req, res) => {
       return res.end(JSON.stringify({ error: 'Chưa đăng nhập' }));
     }
 
-    const jobName = body.jobName; // << tên job do client gửi
+    const jobName = body.jobName; // tên job do client gửi
     const sourceFolderLink = body.sourceFolderLink;
     const wantedRaw = normalizeList(body.list);
     const folderId = extractFolderIdFromUrl(sourceFolderLink);
@@ -103,7 +103,7 @@ module.exports = async (req, res) => {
     do {
       const resp = await drive.files.list({
         q: `'${folderId}' in parents and trashed=false`,
-        fields: 'nextPageToken, files(id,name,mimeType)',
+        fields: 'nextPageToken, files(id,name,mimeType,thumbnailLink)',
         pageSize: 1000,
         pageToken,
         supportsAllDrives: true,
@@ -113,6 +113,7 @@ module.exports = async (req, res) => {
       pageToken = resp.data.nextPageToken || null;
     } while (pageToken);
 
+    const totalFiles = files.length;
     const byCanon = buildCanonicalMap(files);
     const wantedCanon = wantedRaw.map(canon);
 
@@ -144,7 +145,7 @@ module.exports = async (req, res) => {
               requestBody: { parents: [targetId], name: f.name },
               supportsAllDrives: true
             });
-            matched.push(f.name);
+            matched.push({ name: f.name, thumbnailLink: f.thumbnailLink || null });
           }
         }
       } else {
@@ -163,8 +164,9 @@ module.exports = async (req, res) => {
       ok: true,
       jobName: targetFolderName,
       resultLink: `https://drive.google.com/drive/folders/${targetId}`,
-      matched,
-      notFound
+      matched,            // [{name, thumbnailLink}, ...]
+      notFound,           // [string]
+      totalFiles          // tổng số file đã quét trong thư mục nguồn
     };
 
     res.setHeader('Content-Type', 'application/json');
